@@ -7,6 +7,8 @@ package frc.robot.subsystems;
 import com.revrobotics.spark.SparkBase.PersistMode;
 import com.revrobotics.spark.SparkBase.ResetMode;
 import com.revrobotics.spark.SparkLowLevel.MotorType;
+import com.revrobotics.spark.config.ClosedLoopConfig;
+import com.revrobotics.spark.config.FeedForwardConfig;
 import com.revrobotics.spark.config.SparkMaxConfig;
 import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
 import com.revrobotics.spark.SparkMax;
@@ -57,7 +59,6 @@ public class FuelSubsystem extends SubsystemBase {
     SmartDashboard.putNumber("Spin-up feeder roller value", SPIN_UP_FEEDER_VOLTAGE);
   SmartDashboard.putNumber("Launcher Target RPM", 3500); // Start safe for PLA+
     SmartDashboard.putNumber("Launching feeder voltage", LAUNCHING_FEEDER_VOLTAGE);
-
    // --- FEEDER CONFIG ---
     SparkMaxConfig feederConfig = new SparkMaxConfig();
     feederConfig.idleMode(IdleMode.kBrake);
@@ -76,11 +77,15 @@ public class FuelSubsystem extends SubsystemBase {
     launcherConfig.closedLoopRampRate(0.5); 
     launcherConfig.openLoopRampRate(0.5);
 
+
     // PID Constants for Velocity
-    launcherConfig.closedLoop.p(0.0001);
-    launcherConfig.closedLoop.i(0);
-    launcherConfig.closedLoop.d(0);
-    launcherConfig.closedLoop.velocityFF(0.000175); // Adjust based on your gear ratio
+    // launcherConfig.closedLoop.p(0.05);
+    // launcherConfig.closedLoop.i(0);
+    // launcherConfig.closedLoop.d(0.2);
+  SmartDashboard.putNumber("Shooter Velocity", intakeLauncherRoller.getEncoder().getVelocity());
+
+
+    // launcherConfig.closedLoop.velocityFF(0.000175); // Adjust based on your gear ratio
 
     intakeLauncherRoller.configure(launcherConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
   }
@@ -91,6 +96,7 @@ public class FuelSubsystem extends SubsystemBase {
 feederRoller.setVoltage(SmartDashboard.getNumber("Intaking feeder roller value", INTAKING_FEEDER_VOLTAGE));
     intakeLauncherRoller
         .setVoltage(SmartDashboard.getNumber("Intaking intake roller value", INTAKING_INTAKE_VOLTAGE));
+        
   }
 
   // A method to set the rollers to values for ejecting fuel out the intake. Uses
@@ -111,30 +117,14 @@ feederRoller.setVoltage(SmartDashboard.getNumber("Intaking feeder roller value",
         .setVoltage(SmartDashboard.getNumber("Launching launcher roller value", LAUNCHING_LAUNCHER_VOLTAGE));
   }
   //------------------------------------------------------------------------------------------------------------
-// A method to set the rollers to values for ejecting fuel out the intake. Uses
-  // the same values as intaking, but in the opposite direction.
-  public void normalEject() {
-            feederRoller.setInverted(true);
 
-    feederRoller
-        .setVoltage(.85 * SmartDashboard.getNumber("Intaking feeder roller value", INTAKING_FEEDER_VOLTAGE));
-    intakeLauncherRoller
-        .setVoltage(-.85 * SmartDashboard.getNumber("Intaking launcher roller value", -INTAKING_INTAKE_VOLTAGE));
-  }
   // A method to set the rollers to values for launching.
   public void normalLaunch() {
     double targetRPM = SmartDashboard.getNumber("Launcher Target RPM", 3500);
     double feederVolts = SmartDashboard.getNumber("Launching feeder voltage", LAUNCHING_FEEDER_VOLTAGE);
 
-    // Use PID to maintain steady RPM
-    launcherPID.setReference(targetRPM, ControlType.kVelocity);
-
     // Check if we are within 150 RPM of target before feeding
-    if (Math.abs(launcherEncoder.getVelocity() - targetRPM) < 150) {
-        feederRoller.setVoltage(feederVolts);
-    } else {
-        feederRoller.setVoltage(0);
-    }
+    feederRoller.setVoltage(feederVolts);
 
 }
 
@@ -147,8 +137,6 @@ feederRoller.setVoltage(SmartDashboard.getNumber("Intaking feeder roller value",
   // A method to spin up the launcher roller while spinning the feeder roller to
   // push Fuel away from the launcher
   public void spinUp() {
-    feederRoller
-        .setVoltage(SmartDashboard.getNumber("Spin-up feeder roller value", SPIN_UP_FEEDER_VOLTAGE));
     intakeLauncherRoller
         .setVoltage(SmartDashboard.getNumber("Launching launcher roller value", LAUNCHING_LAUNCHER_VOLTAGE));
   }

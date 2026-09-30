@@ -116,12 +116,27 @@ public class FuelSubsystem extends SubsystemBase {
     intakeLauncherRoller.setVoltage(-intakeVolts);
   }
 
-  /** Open-loop full-voltage launch mode (bypasses PID) */
-  public void yeetLaunch() {
-    double feederVolts = SmartDashboard.getNumber("Launching feeder voltage", LAUNCHING_FEEDER_VOLTAGE);
+// Open-loop launch (runs both motors immediately at full speed)
+public void yeetLaunch() {
+  intakeLauncherRoller.setVoltage(SmartDashboard.getNumber("Launching launcher roller value", LAUNCHING_LAUNCHER_VOLTAGE));
+  feederRoller.setVoltage(SmartDashboard.getNumber("Launching feeder roller value", LAUNCHING_FEEDER_VOLTAGE));
+}
+
+// Closed-loop launch (spins flywheel to 4500 RPM, then feeds)
+public void normalLaunch() {
+  double targetRPM = SmartDashboard.getNumber("Launcher Target RPM", LAUNCHER_TARGET_RPM);
+  double feederVolts = SmartDashboard.getNumber("Launching feeder voltage", LAUNCHING_FEEDER_VOLTAGE);
+
+  // 1. Command launcher to spin using velocity control
+  launcherPID.setReference(targetRPM, ControlType.kVelocity, ClosedLoopSlot.kSlot0);
+
+  // 2. Feed only when within 150 RPM of target
+  if (Math.abs(launcherEncoder.getVelocity() - targetRPM) <= 150.0) {
     feederRoller.setVoltage(feederVolts);
-    intakeLauncherRoller.setVoltage(12.0);
+  } else {
+    feederRoller.setVoltage(0.0);
   }
+}
 
   /** Holds the ball back by backing up the feeder while spinning the flywheel */
   public void spinUp() {

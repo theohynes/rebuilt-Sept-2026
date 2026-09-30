@@ -101,39 +101,22 @@ public final class Constants {
  
 
   public static final class FuelConstants {
-    // Motor controller IDs for Fuel Mechanism motors
     public static final int FEEDER_MOTOR_ID = 22;
-    public static final int INTAKE_LAUNCHER_MOTOR_ID = 21;
+  public static final int INTAKE_LAUNCHER_MOTOR_ID = 21;
 
-    // Current limit and nominal voltage for fuel mechanism motors.
-    //CIM
-    //public static final int FEEDER_MOTOR_CURRENT_LIMIT = 60;
-    //public static final int LAUNCHER_MOTOR_CURRENT_LIMIT = 60;
+  public static final int FEEDER_MOTOR_CURRENT_LIMIT = 40;
+  public static final int LAUNCHER_MOTOR_CURRENT_LIMIT = 50;
 
-    //NEOS
-    public static final int FEEDER_MOTOR_CURRENT_LIMIT = 50;
-    public static final int LAUNCHER_MOTOR_CURRENT_LIMIT = 50;
+  // Use strictly POSITIVE magnitudes here (0 to 12 Volts)
+  public static final double INTAKING_FEEDER_VOLTAGE = 10.0;
+  public static final double INTAKING_INTAKE_VOLTAGE = 7.0;
 
-    // Voltage values for various fuel operations. These values may need to be tuned
-    // based on exact robot construction.
-    // See the Software Guide for tuning information
-    
-    public static final double INTAKING_FEEDER_VOLTAGE = -12; 
-    public static final double Intake_SECONDS = 0.5;
+  public static final double LAUNCHING_FEEDER_VOLTAGE = 9.0;
+  public static final double LAUNCHING_LAUNCHER_VOLTAGE = 11.0;
 
-    //public static final double INTAKING_INTAKE_VOLTAGE = -10; competition
-    //public static final double INTAKING_FEEDER_VOLTAGE = -8;//test at the mez
-    public static final double INTAKING_INTAKE_VOLTAGE = 7;//test at the mez
+  public static final double SPIN_UP_FEEDER_VOLTAGE = 4.0;
+  public static final double LAUNCHER_TARGET_RPM = 4500.0;
 
-    //public static final double LAUNCHING_FEEDER_VOLTAGE = 9;//competition
-        public static final double LAUNCHING_FEEDER_VOLTAGE = 10;//test at the mez
-
-    public static final double LAUNCHING_LAUNCHER_VOLTAGE = 10.6;
-    //public static final double LAUNCHING_LAUNCHER_VOLTAGE = 8.6;//competition
-    //public static final double LAUNCHING_LAUNCHER_VOLTAGE = 8;//test at the mez
-
-    public static final double SPIN_UP_FEEDER_VOLTAGE = 6;
-   // public static final double SPIN_UP_FEEDER_VOLTAGE = 8;
 
     public static final double SPIN_UP_SECONDS = 1;
     public static final double SPIN_UP_FINALS_SECONDS=5;

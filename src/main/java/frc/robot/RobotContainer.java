@@ -156,37 +156,27 @@ public class RobotContainer {
    * {@link JoystickButton}.
    */
     private void configureButtonBindings() {
-   /** new Button(m_driverController, Button.kR1.value)
-        .whileTrue(new RunCommand(
-            () -> m_robotDrive.setXCommand(),
-            m_robotDrive));
+  
 
-    new Button(m_driverController, CommandXboxController.Button.kStart.value)
-        .onTrue(new InstantCommand(
-            () -> m_robotDrive.zeroHeading(),
-            m_robotDrive));
-            **/
-            
-// WILL BE FOR THE ARM @TODO 
-  //Left Trigger -> arm moves up
-  //idy is isdoneyet
-  /** 
-  m_driverController.leftTrigger(OIConstants.kTriggerButtonThreshold)
-  .whileTrue(new extendArmToBar(m_armSubsystem, 5, 0.5, false));
-**/
       // While the left bumper on operator controller is held, intake Fuel
     m_driverController.leftBumper()
         .whileTrue(ballSubsystem.runEnd(() -> ballSubsystem.intake(), () -> ballSubsystem.stop()));
-    // While the right bumper on the operator controller is held, spin up for 1
-    // second, then launch fuel. When the button is released, stop.
+// While the right bumper on the operator controller is held, spin up until 
+    // the target RPM is reached, then launch fuel. When released, stop.
     m_driverController.rightBumper()
-        .whileTrue(ballSubsystem.spinUpCommand().withTimeout(FuelConstants.SPIN_UP_SECONDS)
-            .andThen(ballSubsystem.launchCommand())
-            .finallyDo(() -> ballSubsystem.stop()));
+        .whileTrue(
+            ballSubsystem.spinUpCommand()
+                // Waits dynamically instead of using a hardcoded timeout
+                .until(() -> ballSubsystem.isLauncherAtTargetSpeed())
+                .andThen(ballSubsystem.launchCommand())
+                .finallyDo(() -> ballSubsystem.stop())
+        );
+
+          
     // While the A button is held on the operator controller, eject fuel back out
     // the intake
     m_driverController.a()
-        .whileTrue(ballSubsystem.runEnd(() -> ballSubsystem.yeetEject(), () -> ballSubsystem.stop()));
+        .whileTrue(ballSubsystem.runEnd(() -> ballSubsystem.eject(), () -> ballSubsystem.stop()));
 
     // Start Button -> Zero swerve heading
     m_driverController.start().onTrue(m_robotDrive.zeroHeadingCommand());

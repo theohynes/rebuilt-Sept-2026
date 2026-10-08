@@ -29,9 +29,9 @@ public final class Constants {
     public static final double kMaxAngularSpeed = 2 * Math.PI; // radians per second
 
     // Chassis configuration
-    public static final double kTrackWidth = Units.inchesToMeters(28);
+    public static final double kTrackWidth = Units.inchesToMeters(26.5);
     // Distance between centers of right and left wheels on robot
-    public static final double kWheelBase = Units.inchesToMeters(27);
+    public static final double kWheelBase = Units.inchesToMeters(26.5);
     // Distance between front and back wheels on robot
     public static final SwerveDriveKinematics kDriveKinematics = new SwerveDriveKinematics(
         new Translation2d(kWheelBase / 2, kTrackWidth / 2),
@@ -63,7 +63,7 @@ public final class Constants {
     // The MAXSwerve module can be configured with one of three pinion gears: 12T,
     // 13T, or 14T. This changes the drive speed of the module (a pinion gear with
     // more teeth will result in a robot that drives faster).
-    public static final int kDrivingMotorPinionTeeth = 13;
+    public static final int kDrivingMotorPinionTeeth = 14;
 
     // Calculations required for driving motor conversion factors and feed forward
     public static final double kDrivingMotorFreeSpeedRps = NeoMotorConstants.kFreeSpeedRpm / 60;
@@ -78,9 +78,7 @@ public final class Constants {
 
   public static final class OIConstants {
     public static final int kDriverControllerPort = 0;
-    public static final double kDriveDeadband = 0.1;
-    public static final double kTriggerButtonThreshold = 0.2;
-
+    public static final double kDriveDeadband = 0.05;
   }
 
   public static final class AutoConstants {
@@ -98,29 +96,49 @@ public final class Constants {
         kMaxAngularSpeedRadiansPerSecond, kMaxAngularSpeedRadiansPerSecondSquared);
   }
 
+  public static final class NeoMotorConstants {
+    public static final double kFreeSpeedRpm = 5676;
+  }
+
  
 
   public static final class FuelConstants {
+  //  public static final int FEEDER_MOTOR_ID = 22;
+ // public static final int INTAKE_LAUNCHER_MOTOR_ID = 21;
+
+  //public static final int FEEDER_MOTOR_CURRENT_LIMIT = 40;
+ // public static final int LAUNCHER_MOTOR_CURRENT_LIMIT = 40;
+
+  // Use strictly POSITIVE magnitudes here (0 to 12 Volts)
+ // public static final double INTAKING_FEEDER_VOLTAGE = 10.0;
+ // public static final double INTAKING_INTAKE_VOLTAGE = 7.0;
+
+ // public static final double LAUNCHING_FEEDER_VOLTAGE = 9.0;
+ // public static final double LAUNCHING_LAUNCHER_VOLTAGE = 11.0;
+
+ // public static final double SPIN_UP_FEEDER_VOLTAGE = -2.0;
+ // public static final double LAUNCHER_TARGET_RPM = 4000.0;
+
+
+  //  public static final double SPIN_UP_SECONDS = .5;
+   // public static final double SPIN_UP_FINALS_SECONDS=5;
+  
     public static final int FEEDER_MOTOR_ID = 22;
   public static final int INTAKE_LAUNCHER_MOTOR_ID = 21;
 
   public static final int FEEDER_MOTOR_CURRENT_LIMIT = 40;
-  public static final int LAUNCHER_MOTOR_CURRENT_LIMIT = 50;
+  public static final int LAUNCHER_MOTOR_CURRENT_LIMIT = 40;
 
-  // Use strictly POSITIVE magnitudes here (0 to 12 Volts)
   public static final double INTAKING_FEEDER_VOLTAGE = 10.0;
   public static final double INTAKING_INTAKE_VOLTAGE = 7.0;
 
   public static final double LAUNCHING_FEEDER_VOLTAGE = 9.0;
-  public static final double LAUNCHING_LAUNCHER_VOLTAGE = 11.0;
-
-  public static final double SPIN_UP_FEEDER_VOLTAGE = 4.0;
-  public static final double LAUNCHER_TARGET_RPM = 4500.0;
-
-
-    public static final double SPIN_UP_SECONDS = 1;
-    public static final double SPIN_UP_FINALS_SECONDS=5;
   
+  // Set to 0 so the feeder waits until the flywheels are ready
+  public static final double SPIN_UP_FEEDER_VOLTAGE = 0.0; 
+  
+  public static final double LAUNCHER_TARGET_RPM = 4000.0;
+
   }
 
     public static final class OperatorConstants {
@@ -140,9 +158,4 @@ public final class Constants {
       //public static final boolean ARM_MOTOR_INVERTED = false;
       //public static final int ARM_MOTOR_CAN_ID = 31;
 
-
- public static final class NeoMotorConstants {
-    public static final double kFreeSpeedRpm = 5676;
-    //public static final double kFreeSpeedRpm = 6784;
-  }
 }

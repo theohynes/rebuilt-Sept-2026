@@ -5,33 +5,31 @@
 package frc.robot.autos;
 
 import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
-import frc.robot.Constants.FuelConstants;
 import frc.robot.subsystems.DriveSubsystem;
 import frc.robot.subsystems.FuelSubsystem;
-import edu.wpi.first.wpilibj2.command.Command;
-import edu.wpi.first.wpilibj2.command.InstantCommand;
-import edu.wpi.first.wpilibj2.command.RunCommand;
-import edu.wpi.first.wpilibj2.command.Commands;
 
-
-// NOTE:  Consider using this command inline, rather than writing a subclass.  For more
-// information, see:
-// https://docs.wpilib.org/en/stable/docs/software/commandbased/convenience-features.html
 public class WayneState_Finals_auto extends SequentialCommandGroup {
 
   public WayneState_Finals_auto(DriveSubsystem driveSubsystem1, FuelSubsystem ballSubsystem) {
-   
+    
     addCommands(
-        ballSubsystem.spinUpCommand().withTimeout(FuelConstants.SPIN_UP_SECONDS),
+        // 1. Start spinning up the launcher AT THE SAME TIME as driving backward.
+        // .deadlineWith means the spinUpCommand will stop as soon as the AutoDrive finishes.
+        new AutoDrive(driveSubsystem1, -.9, 0.0)
+            .withTimeout(0.5)
+            .deadlineWith(ballSubsystem.spinUpCommand()),
 
-    // Drive backwards for .25 seconds. The driveArcadeAuto command factory
-    // intentionally creates a command which does not end which allows us to control
-    // the timing using the withTimeout decorator
-    new AutoDrive(driveSubsystem1,-.9,  0.0).withTimeout(.5),
-    // Spin up the launcher for 1 second and then launch balls for 9 seconds, for a
-    // total of 10 seconds
-ballSubsystem.spinUpCommand()
-            .andThen(ballSubsystem.launchCommand())
-            .finallyDo(() -> ballSubsystem.stop()));
-            }
+        // 2. Ensure we are exactly at 4,000 RPM before feeding.
+        // Because we started revving while driving, this might finish instantly!
+        ballSubsystem.spinUpCommand()
+            .until(() -> ballSubsystem.isLauncherAtTargetSpeed()),
+
+        // 3. Fire the Fuel! 
+        // We use a timeout here (e.g., 3 seconds) so the command eventually finishes, 
+        // and then we safely shut off all motors using finallyDo.
+        ballSubsystem.launchCommand()
+            .withTimeout(3.0)
+            .finallyDo(() -> ballSubsystem.stop())
+    );
+  }
 }

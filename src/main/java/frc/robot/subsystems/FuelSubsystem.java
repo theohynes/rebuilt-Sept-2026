@@ -27,9 +27,10 @@ public class FuelSubsystem extends SubsystemBase {
   private final SparkMax intakeLauncherRoller;
   private final SparkClosedLoopController launcherPID;
   private final RelativeEncoder launcherEncoder;
+  private final SparkClosedLoopController closedLoopController;
 
   // Tolerance in RPM to verify flywheel is ready for fuel transfer
-  private static final double LAUNCHER_RPM_TOLERANCE = 150.0;
+  private static final double LAUNCHER_RPM_TOLERANCE = 100.0;
 
   public FuelSubsystem() {
     intakeLauncherRoller = new SparkMax(INTAKE_LAUNCHER_MOTOR_ID, MotorType.kBrushless);
@@ -58,8 +59,9 @@ public class FuelSubsystem extends SubsystemBase {
     SparkMaxConfig launcherConfig = new SparkMaxConfig();
     launcherConfig.inverted(false);
     launcherConfig.idleMode(IdleMode.kCoast); // Preserves rotational inertia
-    launcherConfig.smartCurrentLimit(50);     // 50A allows snappy recovery during ball compression
+    launcherConfig.smartCurrentLimit(40);     // 40A allows snappy recovery during ball compression
     launcherConfig.voltageCompensation(12.0);
+    SmartDashboard.putNumber("Launcher Target RPM", LAUNCHER_TARGET_RPM);
 
     // Ramp rates smooth gear mesh shock while keeping acceleration crisp
     launcherConfig.closedLoopRampRate(0.25);
@@ -71,115 +73,78 @@ public class FuelSubsystem extends SubsystemBase {
         .velocityFF(0.000176, ClosedLoopSlot.kSlot0)
         .p(0.00012, ClosedLoopSlot.kSlot0)
         .i(0.0, ClosedLoopSlot.kSlot0)
-        .d(0.0005, ClosedLoopSlot.kSlot0);
+        .d(0.00018, ClosedLoopSlot.kSlot0);
 
     intakeLauncherRoller.configure(launcherConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
+  closedLoopController = intakeLauncherRoller.getClosedLoopController();
   }
 
   // --- Flywheel Speed Checker ---
   public boolean isLauncherAtTargetSpeed() {
-    double targetRPM = SmartDashboard.getNumber("Launcher Target RPM", 3500.0);
-    return Math.abs(launcherEncoder.getVelocity() - targetRPM) <= LAUNCHER_RPM_TOLERANCE;
+double targetRPM = SmartDashboard.getNumber("Launcher Target RPM", LAUNCHER_TARGET_RPM);    return Math.abs(launcherEncoder.getVelocity() - targetRPM) <= LAUNCHER_RPM_TOLERANCE;
   }
+
+public void setPercentageOutput(double Speed){
+  intakeLauncherRoller.set(Speed);
+}
+
+public void setTargetRPM(double rpm){
+  closedLoopController.setReference(rpm, SparkMax.ControlType.kVelocity);
+}
+
+public double getRPM(){
+return launcherEncoder.getVelocity();
+}
 
   // --- Subsystem Actions ---
 
-  /** Spools launcher up to target RPM using closed-loop velocity control */
-  public void runLauncherClosedLoop() {
-    double targetRPM = SmartDashboard.getNumber("Launcher Target RPM", 3500.0);
-    launcherPID.setReference(targetRPM, ControlType.kVelocity, ClosedLoopSlot.kSlot0);
-  }
-
-  /** Feeds fuel only if the launcher is within tolerance */
-  public void runFeederInterlocked() {
-    double feederVolts = SmartDashboard.getNumber("Launching feeder voltage", LAUNCHING_FEEDER_VOLTAGE);
-    if (isLauncherAtTargetSpeed()) {
-      feederRoller.setVoltage(feederVolts);
-    } else {
-      feederRoller.setVoltage(0.0);
-    }
-  }
-
-  /** Intakes fuel from the floor/terminal */
   public void intake() {
-    double feederVolts = SmartDashboard.getNumber("Intaking feeder voltage", INTAKING_FEEDER_VOLTAGE);
-    double intakeVolts = SmartDashboard.getNumber("Intaking intake voltage", INTAKING_INTAKE_VOLTAGE);
-    feederRoller.setVoltage(-feederVolts);
-    intakeLauncherRoller.setVoltage(intakeVolts);
+    feederRoller.setVoltage(SmartDashboard.getNumber("Intaking feeder voltage", INTAKING_FEEDER_VOLTAGE));
+    intakeLauncherRoller.setVoltage(SmartDashboard.getNumber("Intaking intake voltage", INTAKING_INTAKE_VOLTAGE));
   }
 
-  /** Ejects stuck fuel out through the intake */
-  public void yeetEject() {
-    double feederVolts = SmartDashboard.getNumber("Intaking feeder voltage", INTAKING_FEEDER_VOLTAGE);
-    double intakeVolts = SmartDashboard.getNumber("Intaking intake voltage", INTAKING_INTAKE_VOLTAGE);
-    feederRoller.setVoltage(feederVolts);
-    intakeLauncherRoller.setVoltage(-intakeVolts);
+  public void eject() {
+    feederRoller.setVoltage(-1 * SmartDashboard.getNumber("Intaking feeder voltage", INTAKING_FEEDER_VOLTAGE));
+    intakeLauncherRoller.setVoltage(-1 * SmartDashboard.getNumber("Intaking intake voltage", INTAKING_INTAKE_VOLTAGE));
   }
 
-// Open-loop launch (runs both motors immediately at full speed)
-public void yeetLaunch() {
-  intakeLauncherRoller.setVoltage(SmartDashboard.getNumber("Launching launcher roller value", LAUNCHING_LAUNCHER_VOLTAGE));
-  feederRoller.setVoltage(SmartDashboard.getNumber("Launching feeder roller value", LAUNCHING_FEEDER_VOLTAGE));
-}
-
-// Closed-loop launch (spins flywheel to 4500 RPM, then feeds)
-public void normalLaunch() {
-  double targetRPM = SmartDashboard.getNumber("Launcher Target RPM", LAUNCHER_TARGET_RPM);
-  double feederVolts = SmartDashboard.getNumber("Launching feeder voltage", LAUNCHING_FEEDER_VOLTAGE);
-
-  // 1. Command launcher to spin using velocity control
-  launcherPID.setReference(targetRPM, ControlType.kVelocity, ClosedLoopSlot.kSlot0);
-
-  // 2. Feed only when within 150 RPM of target
-  if (Math.abs(launcherEncoder.getVelocity() - targetRPM) <= 150.0) {
-    feederRoller.setVoltage(feederVolts);
-  } else {
-    feederRoller.setVoltage(0.0);
-  }
-}
-
-  /** Holds the ball back by backing up the feeder while spinning the flywheel */
-  public void spinUp() {
-    runLauncherClosedLoop();
-    double spinUpFeederVolts = SmartDashboard.getNumber("Spin-up feeder voltage", SPIN_UP_FEEDER_VOLTAGE);
-    feederRoller.setVoltage(-spinUpFeederVolts);
+  // Uses closed-loop RPM for the launcher, voltage for the feeder
+  public void launch() {
+    double targetRPM = SmartDashboard.getNumber("Launcher Target RPM", LAUNCHER_TARGET_RPM);
+    feederRoller.setVoltage(SmartDashboard.getNumber("Launching feeder voltage", LAUNCHING_FEEDER_VOLTAGE));
+    
+    // Actually use your PID controller and target RPM!
+    setTargetRPM(targetRPM); 
   }
 
   public void stop() {
-    feederRoller.setVoltage(0.0);
-    intakeLauncherRoller.setVoltage(0.0);
+    feederRoller.set(0);
+    intakeLauncherRoller.set(0);
   }
 
-  // --- Command Factories ---
+  public void spinUp() {
+    double targetRPM = SmartDashboard.getNumber("Launcher Target RPM", LAUNCHER_TARGET_RPM);
+    feederRoller.setVoltage(SmartDashboard.getNumber("Spin-up feeder voltage", SPIN_UP_FEEDER_VOLTAGE));
+    
+    // Spin up to the target RPM
+    setTargetRPM(targetRPM); 
+  }
 
-  /** Pre-spins flywheel while keeping fuel back */
+  // A command factory to turn the spinUp method into a command that requires this
+  // subsystem
   public Command spinUpCommand() {
-    return this.run(this::spinUp);
+    return this.run(() -> spinUp());
   }
 
-  /** Spins flywheel and feeds automatically when at target velocity */
+  // A command factory to turn the launch method into a command that requires this
+  // subsystem
   public Command launchCommand() {
-    return this.run(() -> {
-      runLauncherClosedLoop();
-      runFeederInterlocked();
-    });
-  }
-
-  public Command intakeCommand() {
-    return this.run(this::intake);
-  }
-
-  public Command ejectCommand() {
-    return this.run(this::yeetEject);
-  }
-
-  public Command yeetTheBallCommand() {
-    return this.run(this::yeetLaunch);
+    return this.run(() -> launch());
   }
 
   @Override
   public void periodic() {
-    SmartDashboard.putNumber("Actual Launcher RPM", launcherEncoder.getVelocity());
-    SmartDashboard.putBoolean("Launcher At Speed", isLauncherAtTargetSpeed());
+    // This method will be called once per scheduler run
   }
+
 }

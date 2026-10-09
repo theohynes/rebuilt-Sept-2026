@@ -127,17 +127,16 @@ public final class Constants {
   public static final int INTAKE_LAUNCHER_MOTOR_ID = 21;
 
   public static final int FEEDER_MOTOR_CURRENT_LIMIT = 40;
-  public static final int LAUNCHER_MOTOR_CURRENT_LIMIT = 40;
+  public static final int LAUNCHER_MOTOR_CURRENT_LIMIT = 60;
 
   public static final double INTAKING_FEEDER_VOLTAGE = 10.0;
-  public static final double INTAKING_INTAKE_VOLTAGE = 7.0;
+  public static final double INTAKING_INTAKE_VOLTAGE = 10.0;
 
-  public static final double LAUNCHING_FEEDER_VOLTAGE = 9.0;
+  public static final double LAUNCHING_FEEDER_VOLTAGE = 10.0;
   
-  // Set to 0 so the feeder waits until the flywheels are ready
-  public static final double SPIN_UP_FEEDER_VOLTAGE = 0.0; 
+  public static final double SPIN_UP_FEEDER_VOLTAGE = -7.5; 
   
-  public static final double LAUNCHER_TARGET_RPM = 4000.0;
+  public static final double LAUNCHER_TARGET_RPM = 5200.0;
 
   }
 

@@ -44,13 +44,13 @@ public class FuelSubsystem extends SubsystemBase {
     SmartDashboard.putNumber("Intaking intake voltage", INTAKING_INTAKE_VOLTAGE);
     SmartDashboard.putNumber("Launching feeder voltage", LAUNCHING_FEEDER_VOLTAGE);
     SmartDashboard.putNumber("Spin-up feeder voltage", SPIN_UP_FEEDER_VOLTAGE);
-    SmartDashboard.putNumber("Launcher Target RPM", 3500.0);
+    SmartDashboard.putNumber("Launcher Target RPM", 5200.0);
 
     // --- FEEDER CONFIG ---
     SparkMaxConfig feederConfig = new SparkMaxConfig();
     feederConfig.inverted(false); // Inversion fixed once at init; reverse in code via negative voltage
     feederConfig.idleMode(IdleMode.kBrake); // Instant stop prevents double-feeding
-    feederConfig.smartCurrentLimit(35);
+    feederConfig.smartCurrentLimit(40);
     feederConfig.voltageCompensation(12.0);
 
     feederRoller.configure(feederConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
@@ -59,21 +59,24 @@ public class FuelSubsystem extends SubsystemBase {
     SparkMaxConfig launcherConfig = new SparkMaxConfig();
     launcherConfig.inverted(false);
     launcherConfig.idleMode(IdleMode.kCoast); // Preserves rotational inertia
-    launcherConfig.smartCurrentLimit(40);     // 40A allows snappy recovery during ball compression
+    launcherConfig.smartCurrentLimit(60);     // 40A allows snappy recovery during ball compression
     launcherConfig.voltageCompensation(12.0);
     SmartDashboard.putNumber("Launcher Target RPM", LAUNCHER_TARGET_RPM);
 
     // Ramp rates smooth gear mesh shock while keeping acceleration crisp
-    launcherConfig.closedLoopRampRate(0.25);
-    launcherConfig.openLoopRampRate(0.25);
+    launcherConfig.closedLoopRampRate(0.1);
+    launcherConfig.openLoopRampRate(0.0);
+
+    feederConfig.closedLoopRampRate(0.15);
+    feederConfig.openLoopRampRate(0.0);
 
     // Velocity Closed-Loop Tuning (Slot 0)
     // NEO 2.0 free speed ~5676 RPM -> Theoretical kV ~ 1.0 / 5676 ≈ 0.000176
     launcherConfig.closedLoop
         .velocityFF(0.000176, ClosedLoopSlot.kSlot0)
-        .p(0.00012, ClosedLoopSlot.kSlot0)
-        .i(0.0, ClosedLoopSlot.kSlot0)
-        .d(0.00018, ClosedLoopSlot.kSlot0);
+        .p(0.0002, ClosedLoopSlot.kSlot0)
+        .i(0.000, ClosedLoopSlot.kSlot0)
+        .d(0.000, ClosedLoopSlot.kSlot0);
 
     intakeLauncherRoller.configure(launcherConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
   closedLoopController = intakeLauncherRoller.getClosedLoopController();
@@ -111,10 +114,12 @@ return launcherEncoder.getVelocity();
   // Uses closed-loop RPM for the launcher, voltage for the feeder
   public void launch() {
     double targetRPM = SmartDashboard.getNumber("Launcher Target RPM", LAUNCHER_TARGET_RPM);
+    setTargetRPM(targetRPM); 
+
     feederRoller.setVoltage(SmartDashboard.getNumber("Launching feeder voltage", LAUNCHING_FEEDER_VOLTAGE));
+    //intakeLauncherRoller.setVoltage( SmartDashboard.getNumber("Intaking intake voltage", INTAKING_INTAKE_VOLTAGE));
     
     // Actually use your PID controller and target RPM!
-    setTargetRPM(targetRPM); 
   }
 
   public void stop() {
